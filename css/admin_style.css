@@ -339,6 +339,10 @@ section{
 
 .show-products .box-container .box img{
    height: 30rem;
+   width: 100%;       /*  Forces the image to respect the container width */
+   object-fit: cover;
+    /*  Forces the image to respect the container width */
+ 
 }
 
 .show-products .box-container .box .name{

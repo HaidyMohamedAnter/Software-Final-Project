@@ -69,7 +69,7 @@ We believe that looking good shouldn’t come at a high cost. That’s why we ca
    <div class="box-container">
 
       <div class="box">
-         <img src="images\pic-1.png" alt="">
+         <img src="images/pic-3.png" alt="">
          <p>ماما بتجبلي دايما من الويبسايت هنا و البرودكتس جميلة</p>
          <div class="stars">
             <i class="fas fa-star"></i>
@@ -95,7 +95,7 @@ We believe that looking good shouldn’t come at a high cost. That’s why we ca
       </div>
 
       <div class="box">
-         <img src="images/pic-3.png" alt="">
+         <img src="images\pic-1.png" alt="">
          <p>b7b ashtri stock kterr mn hena bgd touhfa</p>
          <div class="stars">
             <i class="fas fa-star"></i>

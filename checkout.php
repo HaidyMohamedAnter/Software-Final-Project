@@ -62,19 +62,40 @@ if(isset($_POST['order_btn'])){
       $message[] = 'Order already placed!';
    }
    else{
+      // ✅ 1. update stock
+     $cart_items = mysqli_query($conn, "SELECT * FROM cart WHERE user_id = '$user_id'");
 
-      
-      mysqli_query($conn, "
-         INSERT INTO orders
-         (user_id, name, number, email, method, address, total_products, total_price, placed_on)
-         VALUES
-         ('$user_id', '$name', '$number', '$email', '$method', '$address', '$total_products', '$cart_total', '$placed_on')
-      ") or die('query failed');
+     while($item = mysqli_fetch_assoc($cart_items)){
 
-      
-      mysqli_query($conn, "DELETE FROM cart WHERE user_id = '$user_id'") or die('query failed');
+       $product_id = $item['product_id'];
+      $qty = $item['quantity'];
 
-      $message[] = 'Order placed successfully!';
+       $check = mysqli_query($conn, "SELECT quantity FROM products WHERE id='$product_id'");
+       $product = mysqli_fetch_assoc($check);
+
+   if($qty > $product['quantity']){
+      die('Some items are out of stock!');
+   }
+
+   mysqli_query($conn, "
+      UPDATE products 
+      SET quantity = quantity - $qty 
+      WHERE id = '$product_id'
+   ");
+}
+
+// ✅ 2. save order
+mysqli_query($conn, "
+   INSERT INTO orders
+   (user_id, name, number, email, method, address, total_products, total_price, placed_on)
+   VALUES
+   ('$user_id', '$name', '$number', '$email', '$method', '$address', '$total_products', '$cart_total', '$placed_on')
+") or die('query failed');
+
+// ✅ 3. clear cart
+mysqli_query($conn, "DELETE FROM cart WHERE user_id = '$user_id'");
+
+  
    }
 }
 

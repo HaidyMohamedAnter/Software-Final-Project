@@ -1,11 +1,11 @@
 let userBox = document.querySelector('.header .header-2 .user-box');
+let navbar = document.querySelector('.header .header-2 .navbar');
 
 document.querySelector('#user-btn').onclick = () =>{
    userBox.classList.toggle('active');
    navbar.classList.remove('active');
 }
 
-let navbar = document.querySelector('.header .header-2 .navbar');
 
 document.querySelector('#menu-btn').onclick = () =>{
    navbar.classList.toggle('active');
