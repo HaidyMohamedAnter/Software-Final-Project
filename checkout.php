@@ -11,12 +11,14 @@ if(!isset($user_id)){
    exit();
 }
 
+// Server-side validation for phone number
 if(isset($_POST['order_btn'])){
 
-   $name = mysqli_real_escape_string($conn, $_POST['name']);
-   $number = mysqli_real_escape_string($conn, $_POST['number']);
-   $email = mysqli_real_escape_string($conn, $_POST['email']);
-   $method = mysqli_real_escape_string($conn, $_POST['method']);
+   $name    = mysqli_real_escape_string($conn, $_POST['name']);
+   $number  = mysqli_real_escape_string($conn, $_POST['number']);
+   $email   = mysqli_real_escape_string($conn, $_POST['email']);
+   $method  = mysqli_real_escape_string($conn, $_POST['method']);
+   
    $address = mysqli_real_escape_string($conn, 
       'flat no. '. $_POST['flat'].', '.
       $_POST['street'].', '.
@@ -27,10 +29,15 @@ if(isset($_POST['order_btn'])){
 
    $placed_on = date('d-M-Y');
 
+   // ====================== PHONE NUMBER VALIDATION ======================
+   if(strlen($number) !== 11 || !ctype_digit($number)){
+      $message[] = 'Phone number must be exactly 11 digits!';
+   }
+   // ===================================================================
+
    $cart_total = 0;
    $cart_products = [];
 
-   
    $cart_query = mysqli_query($conn, "SELECT * FROM cart WHERE user_id = '$user_id'") or die('query failed');
 
    if(mysqli_num_rows($cart_query) > 0){
@@ -43,59 +50,56 @@ if(isset($_POST['order_btn'])){
 
    $total_products = mysqli_real_escape_string($conn, implode(', ', $cart_products));
 
-   
-   $order_query = mysqli_query($conn, "
-      SELECT * FROM orders 
-      WHERE name = '$name' 
-      AND number = '$number' 
-      AND email = '$email' 
-      AND method = '$method' 
-      AND address = '$address' 
-      AND total_products = '$total_products' 
-      AND total_price = '$cart_total'
-   ") or die('query failed');
-
    if($cart_total == 0){
       $message[] = 'Your cart is empty!';
    }
-   elseif(mysqli_num_rows($order_query) > 0){
-      $message[] = 'Order already placed!';
+   elseif(isset($message) && count($message) > 0){
+      // Do nothing, just show error (phone validation failed)
    }
    else{
-      // ✅ 1. update stock
-     $cart_items = mysqli_query($conn, "SELECT * FROM cart WHERE user_id = '$user_id'");
+      $order_query = mysqli_query($conn, "
+         SELECT * FROM orders 
+         WHERE name = '$name' 
+         AND number = '$number' 
+         AND email = '$email' 
+         AND method = '$method' 
+         AND address = '$address' 
+         AND total_products = '$total_products' 
+         AND total_price = '$cart_total'
+      ") or die('query failed');
 
-     while($item = mysqli_fetch_assoc($cart_items)){
+      if(mysqli_num_rows($order_query) > 0){
+         $message[] = 'Order already placed!';
+      } else {
+         // Update stock
+         $cart_items = mysqli_query($conn, "SELECT * FROM cart WHERE user_id = '$user_id'");
+         while($item = mysqli_fetch_assoc($cart_items)){
+            $product_id = $item['product_id'];
+            $qty = $item['quantity'];
 
-       $product_id = $item['product_id'];
-      $qty = $item['quantity'];
+            $check = mysqli_query($conn, "SELECT quantity FROM products WHERE id='$product_id'");
+            $product = mysqli_fetch_assoc($check);
 
-       $check = mysqli_query($conn, "SELECT quantity FROM products WHERE id='$product_id'");
-       $product = mysqli_fetch_assoc($check);
+            if($qty > $product['quantity']){
+               die('Some items are out of stock!');
+            }
 
-   if($qty > $product['quantity']){
-      die('Some items are out of stock!');
-   }
+            mysqli_query($conn, "UPDATE products SET quantity = quantity - $qty WHERE id = '$product_id'");
+         }
 
-   mysqli_query($conn, "
-      UPDATE products 
-      SET quantity = quantity - $qty 
-      WHERE id = '$product_id'
-   ");
-}
+         // Insert Order
+         mysqli_query($conn, "
+            INSERT INTO orders
+            (user_id, name, number, email, method, address, total_products, total_price, placed_on)
+            VALUES
+            ('$user_id', '$name', '$number', '$email', '$method', '$address', '$total_products', '$cart_total', '$placed_on')
+         ") or die('query failed');
 
-// ✅ 2. save order
-mysqli_query($conn, "
-   INSERT INTO orders
-   (user_id, name, number, email, method, address, total_products, total_price, placed_on)
-   VALUES
-   ('$user_id', '$name', '$number', '$email', '$method', '$address', '$total_products', '$cart_total', '$placed_on')
-") or die('query failed');
+         // Clear Cart
+         mysqli_query($conn, "DELETE FROM cart WHERE user_id = '$user_id'");
 
-// ✅ 3. clear cart
-mysqli_query($conn, "DELETE FROM cart WHERE user_id = '$user_id'");
-
-  
+         $message[] = 'Order placed successfully!';
+      }
    }
 }
 
@@ -106,7 +110,6 @@ mysqli_query($conn, "DELETE FROM cart WHERE user_id = '$user_id'");
 <head>
    <meta charset="UTF-8">
    <title>checkout</title>
-
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
    <link rel="stylesheet" href="css/style.css">
 </head>
@@ -119,8 +122,8 @@ mysqli_query($conn, "DELETE FROM cart WHERE user_id = '$user_id'");
    <p><a href="home.php">home</a> / checkout</p>
 </div>
 
+<!-- Display Order -->
 <section class="display-order">
-
 <?php  
 $grand_total = 0;
 $select_cart = mysqli_query($conn, "SELECT * FROM cart WHERE user_id = '$user_id'") or die('query failed');
@@ -130,25 +133,21 @@ if(mysqli_num_rows($select_cart) > 0){
       $total_price = $fetch_cart['price'] * $fetch_cart['quantity'];
       $grand_total += $total_price;
 ?>
-
 <p>
    <?php echo $fetch_cart['name']; ?> 
-   <span>(<?php echo $fetch_cart['price']; ?> EGPx <?php echo $fetch_cart['quantity']; ?> piece)</span>
+   <span>(<?php echo $fetch_cart['price']; ?> EGP × <?php echo $fetch_cart['quantity']; ?>)</span>
 </p>
-
 <?php
    }
-}else{
+} else {
    echo '<p class="empty">your cart is empty</p>';
 }
 ?>
-
 <div class="grand-total">grand total : <span><?php echo $grand_total; ?> EGP</span></div>
-
 </section>
 
+<!-- Checkout Form -->
 <section class="checkout">
-
 <form action="" method="post">
    <h3>place your order</h3>
 
@@ -161,7 +160,17 @@ if(mysqli_num_rows($select_cart) > 0){
 
       <div class="inputBox">
          <span>your number :</span>
-         <input type="number" name="number" required>
+         <input 
+            type="text" 
+            name="number" 
+            required 
+            maxlength="11" 
+            minlength="11"
+            pattern="[0-9]{11}"
+            placeholder="01xxxxxxxxx"
+            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+            title="Phone number must be exactly 11 digits"
+         >
       </div>
 
       <div class="inputBox">
@@ -206,9 +215,7 @@ if(mysqli_num_rows($select_cart) > 0){
    </div>
 
    <input type="submit" value="order now" name="order_btn" class="btn">
-
 </form>
-
 </section>
 
 <?php include 'footer.php'; ?>

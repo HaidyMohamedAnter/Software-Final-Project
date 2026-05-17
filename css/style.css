@@ -240,15 +240,32 @@ section{
    margin:0 auto;
 }
 
-.header .header-2{
+.header .header-2 {
    background-color: var(--white);
    box-shadow: var(--box-shadow);
+   position: relative; /* 👈 user-box will position relative to this */
+   z-index: 9999;
+}
+
+.header .header-2 .user-box {
+   position: absolute;
+   top: 100%; right: 2rem;
+   background-color: var(--white);
+   border-radius: .5rem;
+   box-shadow: var(--box-shadow);
+   border: var(--border);
+   padding: 2rem;
+   text-align: center;
+   width: 30rem;
+   display: none;
+   animation: fadeIn .2s linear;
+   z-index: 9999;
 }
 
 .header .header-2.active{
    position: fixed;
    top:0; left:0; right:0;
-   z-index: 1000;
+   z-index: 1000; /* already there ✓ */
 }
 
 .header .header-2 .flex{
@@ -259,6 +276,7 @@ section{
    max-width: 1200px;
    margin:0 auto;
    position: relative;
+   z-index: 1001;
 }
 
 .header .header-1 .flex .share a{
@@ -283,6 +301,8 @@ section{
 .header .header-1 .flex p a:hover{
    text-decoration: underline;
 }
+
+
 
 .header .header-2 .flex .logo{
    font-size: 2.5rem;
@@ -327,6 +347,7 @@ section{
    width: 30rem;
    display: none;
    animation: fadeIn .2s linear;
+   z-index: 1001;
 }
 
 .header .header-2 .flex .user-box.active{
@@ -393,6 +414,7 @@ section{
    text-align: center;
    border:var(--border);
    position: relative;
+   z-index: 1;
 }
 
 .products .box-container .box img{
@@ -961,6 +983,7 @@ section{
    #menu-btn{
       display: inline-block;
    }
+
 
    .header .header-2 .flex .navbar{
       position: absolute;
